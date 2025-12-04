@@ -1,0 +1,3 @@
+{
+    "8469b126ffa0f00b38aa6b5f01f7ae2aac1d4ad4067c24b6c11e02b3eea1f4e6": "query Namespace {\n  namespaces {\n    name\n  }\n}\n"
+}

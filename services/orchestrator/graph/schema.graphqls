@@ -1,0 +1,32 @@
+directive @constraint(
+  constraint: String!
+) on INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+directive @hasRole(role: [Role!]!) on FIELD_DEFINITION
+
+enum Role {
+  ANONYMOUS
+  USER
+}
+
+scalar Time
+scalar Duration
+scalar Int64
+
+type Namespace {
+  name: String!
+}
+
+type Query {
+  namespaces: [Namespace!] @hasRole(role: [USER])
+  namespace(id: ID!): Namespace! @hasRole(role: [USER])
+}
+
+input NamespaceOptions {
+  name: String! @constraint(constraint: "required")
+  description: String!
+}
+
+type Mutation {
+  createNamespace(options: NamespaceOptions!): Namespace! @hasRole(role: [USER])
+  deleteNamespace(id: ID!): ID! @hasRole(role: [USER])
+}

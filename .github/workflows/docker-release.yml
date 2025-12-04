@@ -1,0 +1,74 @@
+name: Docker Image Build & Push
+
+on:
+  release:
+    types: [created]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME_PORTAL: ${{ github.repository }}-portal
+  IMAGE_NAME_ORCHESTRATOR: ${{ github.repository }}-orchestrator
+
+jobs:
+  build-and-push-image-portal:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@418e4b98bf2841bd337d0b24fe63cb36dc8afa55
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PORTAL }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1
+        with:
+          context: portal
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-and-push-image-orchestrator:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@418e4b98bf2841bd337d0b24fe63cb36dc8afa55
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_ORCHESTRATOR }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@f8bc7f46003ef0cf98b715743d86c2f1ccd01436
+        with:
+          context: orchestrator
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
