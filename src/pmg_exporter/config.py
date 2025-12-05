@@ -2,12 +2,12 @@ from dotenv import load_dotenv
 import os
 
 
-def load_config(config_file: str) -> dict[str, str|bool]:
+def load_config(config_file: str) -> dict[str, str | bool]:
     if not config_file:
         load_dotenv()
-    else:     
+    else:
         load_dotenv(dotenv_path=config_file)
-    config: dict[str, str|bool] = {}
+    config: dict[str, str | bool] = {}
     config["host"] = os.getenv("PMG_HOST", "default_host")
     config["user"] = os.getenv("PMG_USER", "default_user")
     config["password"] = os.getenv("PMG_PASSWORD", "default_password")
@@ -17,4 +17,3 @@ def load_config(config_file: str) -> dict[str, str|bool]:
     config["exporter_port"] = os.getenv("PMG_EXPORTER_PORT", "10069")
     config["log_level"] = os.getenv("PMG_LOG_LEVEL", "INFO")
     return config
-# 

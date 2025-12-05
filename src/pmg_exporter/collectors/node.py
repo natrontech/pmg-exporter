@@ -18,6 +18,19 @@ POSSIBLE_SUBSCRIPTION_STATUSES: tuple[str, ...] = (
     "expired",
     "suspended",
 )
+AGE_BUCKETS: list[str] = [
+    "5m",
+    "10m",
+    "20m",
+    "40m",
+    "80m",
+    "160m",
+    "320m",
+    "640m",
+    "1280m",
+    "1280m+",
+    "total",
+]
 
 
 def get_single_node_name(proxmox: ProxmoxAPI) -> Optional[str]:
@@ -125,3 +138,36 @@ class NodeSubscriptionCollector(Collector):
         yield subscription_info_metric
         yield subscription_nextdue_timestamp_metric
         yield subscription_status_metric
+
+
+class NodePostfixQueueCollector(Collector):
+    def __init__(self, proxmox: ProxmoxAPI) -> None:
+        self.proxmox = proxmox
+
+    def collect(self):
+        logging.debug("Collecting node Postfix queue metrics...")
+        node = get_single_node_name(self.proxmox)
+        if node is None:
+            return
+
+        postfix_queue_metric = GaugeMetricFamily(
+            "pmg_postfix_queue_size",
+            "Proxmox Mail Gateway Postfix mail queue size",
+            labels=["domain", "age_bucket"],
+        )
+
+        queue_info = cast(
+            dict[str, Any],
+            self.proxmox.nodes(node).postfix.qshape.get(),  # type: ignore
+        )
+
+        for entry in queue_info:
+            for age_bucket in AGE_BUCKETS:
+                size = cast(int, entry.get(age_bucket, 0))  # type: ignore
+                domain = cast(str, entry.get("domain", "unknown"))  # type: ignore
+                postfix_queue_metric.add_metric(
+                    [domain, age_bucket],
+                    size,
+                )
+
+        yield postfix_queue_metric

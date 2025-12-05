@@ -12,6 +12,11 @@ from pmg_exporter.collectors import (
     ClusterBackupCollector,
     NodeStatusCollector,
     NodeSubscriptionCollector,
+    NodePostfixQueueCollector,
+    QuarantineSpamCollector,
+    QuarantineVirusCollector,
+    StatisticsMailcountCollector,
+    VersionInfoCollector,
 )
 
 import logging
@@ -59,9 +64,14 @@ class PMGExporter:
             "cluster_status": ClusterStatusCollector,
             "subscription": NodeSubscriptionCollector,
             "node_status": NodeStatusCollector,
+            "node_postfix_queue": NodePostfixQueueCollector,
             "cluster_nodes": ClusterNodesCollector,
             "cluster_domains": ClusterDomainsCollector,
             "cluster_backups": ClusterBackupCollector,
+            "quarantine_spam": QuarantineSpamCollector,
+            "quarantine_virus": QuarantineVirusCollector,
+            "statistics_mailcount": StatisticsMailcountCollector,
+            "version_info": VersionInfoCollector,
         }
         if self.collectors == ["all"]:
             self.collectors = list(mapping.keys())

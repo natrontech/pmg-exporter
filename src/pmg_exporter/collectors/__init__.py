@@ -7,7 +7,22 @@ from .cluster import (
 from .node import (
     NodeStatusCollector,
     NodeSubscriptionCollector,
+    NodePostfixQueueCollector,
 )
+
+from .quarantine import (
+    QuarantineSpamCollector,
+    QuarantineVirusCollector,
+)
+
+from .statistics import (
+    StatisticsMailcountCollector,
+)
+
+from .version import (
+    VersionInfoCollector,
+)
+
 __all__ = [
     "ClusterStatusCollector",
     "ClusterNodesCollector",
@@ -15,4 +30,9 @@ __all__ = [
     "ClusterBackupCollector",
     "NodeStatusCollector",
     "NodeSubscriptionCollector",
+    "NodePostfixQueueCollector",
+    "QuarantineSpamCollector",
+    "QuarantineVirusCollector",
+    "StatisticsMailcountCollector",
+    "VersionInfoCollector",
 ]
