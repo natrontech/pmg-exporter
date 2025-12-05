@@ -32,29 +32,35 @@ docker run -d \
 
 ## Metrics
 ```
-# HELP pmg_cluster_node_status Proxmox Mail Gateway cluster node status (1 if online)
-# TYPE pmg_cluster_node_status gauge
-# HELP pmg_subscription_info Proxmox Mail Gateway node subscription info (always 1, labeled)
-# TYPE pmg_subscription_info gauge
-# HELP pmg_subscription_nextdue_timestamp_seconds Proxmox Mail Gateway node subscription next due timestamp
-# TYPE pmg_subscription_nextdue_timestamp_seconds gauge
-# HELP pmg_subscription_status Proxmox Mail Gateway node subscription status (1 if matching status)
-# TYPE pmg_subscription_status gauge
-# HELP pmg_node_insync Proxmox Mail Gateway node configuration in sync status (1 if in sync)
-# TYPE pmg_node_insync gauge
-# HELP pmg_node_uptime_seconds Proxmox Mail Gateway node uptime in seconds
-# TYPE pmg_node_uptime_seconds gauge
-# HELP pmg_cluster_nodes_total Total number of nodes in the Proxmox Mail Gateway cluster
-# TYPE pmg_cluster_nodes_total gauge
-# HELP pmg_cluster_node_info Proxmox Mail Gateway cluster node info (1 if present)
-# TYPE pmg_cluster_node_info gauge
-# HELP pmg_cluster_domains_total Total number of domains in the Proxmox Mail Gateway cluster
-# TYPE pmg_cluster_domains_total gauge
-# HELP pmg_cluster_domain_info Proxmox Mail Gateway cluster domain info (1 if present)
-# TYPE pmg_cluster_domain_info gauge
-# HELP pmg_cluster_backups_remotes_total Total number of backup remotes in the Proxmox Mail Gateway cluster
-# TYPE pmg_cluster_backups_remotes_total gauge
-# HELP pmg_cluster_backup_remote_info Proxmox Mail Gateway cluster backup remote info (1 if present)
-# TYPE pmg_cluster_backup_remote_info gauge
+pmg_subscription_info{level, productname}
+pmg_subscription_nextdue_timestamp_seconds{level, productname} 
+pmg_subscription_status{status="new, notfound, active, invalid, expired, suspended"}
+pmg_node_insync{node}
+pmg_node_uptime_seconds{node}
+pmg_postfix_queue_size{age_bucket="5m | 10m | 20m| 40m | 80n | 160m | 320m | 640m | 1280m | 1280m+ | total", domain}
+pmg_cluster_nodes_total 
+pmg_cluster_domains_total 
+pmg_cluster_backups_remotes_total 
+pmg_quarantine_spam_count_total 
+pmg_quarantine_spam_average_size_bytes 
+pmg_quarantine_spam_average_level 
+pmg_quarantine_spam_disk_usage_megabytes 
+pmg_quarantine_virus_count_total 
+pmg_quarantine_virus_average_size_bytes 
+pmg_quarantine_virus_disk_usage_megabytes 
+pmg_postfix_messages_total
+pmg_postfix_messages_in_total 
+pmg_postfix_messages_out_total
+pmg_postfix_bounces_in_total 
+pmg_postfix_bounces_out_total 
+pmg_postfix_spam_in_total 
+pmg_postfix_spam_out_total 
+pmg_postfix_virus_in_total 
+pmg_postfix_virus_out_total 
+pmg_postfix_rbl_rejects_total 
+pmg_postfix_pregreet_rejects_total 
+pmg_release_info_total{release=}
+pmg_repository_info_total{repo}
+pmg_version_info_total{version}
 ```
 
