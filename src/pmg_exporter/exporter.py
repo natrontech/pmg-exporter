@@ -54,7 +54,7 @@ class PMGExporter:
             k: (bool(v) if k == "verify_ssl" else str(v)) for k, v in raw.items()
         }
 
-        logging.debug(f"ProxmoxAPI initialization parameters: {kwargs}")
+        logging.debug(f"ProxmoxAPI initialization parameters: {[{k: arg} if k != "password" else {k: "***"} for k, arg in kwargs.items()]}")
         self.proxmox = ProxmoxAPI(**kwargs)
         logging.info("ProxmoxAPI client initialized.")
 

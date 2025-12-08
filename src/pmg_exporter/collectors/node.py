@@ -7,6 +7,8 @@ from proxmoxer import ProxmoxAPI  # pyright: ignore[reportMissingTypeStubs]
 
 import logging
 
+from datetime import datetime
+
 logging.getLogger("pmg_exporter")
 
 
@@ -116,10 +118,10 @@ class NodeSubscriptionCollector(Collector):
 
         level = subscription_info.get("level", "unknown")
         productname = subscription_info.get("productname", "unknown")
-        nextdue_raw = subscription_info.get("nextdue", 0)
+        nextdue_raw = subscription_info.get("nextduedate", 0)
 
         try:
-            nextdue = int(nextdue_raw)
+            nextdue = int(datetime.strptime(nextdue_raw, "%Y-%m-%d").timestamp())
         except (TypeError, ValueError):
             nextdue = 0
 
