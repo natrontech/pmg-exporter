@@ -1,3 +1,5 @@
+from .exporter import ExporterCollector
+
 from .cluster import (
     ClusterStatusCollector,
     ClusterNodesCollector,
@@ -24,6 +26,7 @@ from .version import (
 )
 
 __all__ = [
+    "ExporterCollector",
     "ClusterStatusCollector",
     "ClusterNodesCollector",
     "ClusterDomainsCollector",

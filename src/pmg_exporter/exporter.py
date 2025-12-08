@@ -6,6 +6,7 @@ import asyncio
 from proxmoxer import ProxmoxAPI  # pyright: ignore[reportMissingTypeStubs]
 
 from pmg_exporter.collectors import (
+    ExporterCollector,
     ClusterStatusCollector,
     ClusterNodesCollector,
     ClusterDomainsCollector,
@@ -61,6 +62,7 @@ class PMGExporter:
     def register_collectors(self) -> None:
         logging.info("Registering collectors...")
         mapping: dict[str, Any] = {
+            "exporter_status": ExporterCollector,
             "cluster_status": ClusterStatusCollector,
             "subscription": NodeSubscriptionCollector,
             "node_status": NodeStatusCollector,
