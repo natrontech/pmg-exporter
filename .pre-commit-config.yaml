@@ -1,9 +1,0 @@
-repos:
-  - repo: local
-    hooks:
-      - id: portal-check
-        name: Portal Check
-        entry: ./scripts/portal-check.sh
-        language: script
-        pass_filenames: false
-        stages: [pre-commit]

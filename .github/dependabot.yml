@@ -1,20 +1,23 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
-  - package-ecosystem: 'npm' # See documentation for possible values
-    directories: ['./']
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'monthly'
+      interval: "weekly"
     commit-message:
-      prefix: ':robot:'
-  # GitHub Actions
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+      prefix: ":seedling: [deps-github-actions]"
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
-      interval: 'monthly'
+      interval: "weekly"
+    groups:
+      python-deps:
+        patterns: ["*"]
     commit-message:
-      prefix: ':seedling:'
+      prefix: ":robot: [deps-python]"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: ":whale: [deps-docker]"

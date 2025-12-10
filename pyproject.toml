@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.25", "hatch-vcs>=0.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pmg-exporter"
+dynamic = ["readme", "version"]
+description = "Proxmox Mail Gateway Exporter for Prometheus"
+authors = [{name = "Nicolo Lüscher", email = "nicolo.luescher@gmail.com"}, {name = "Natron Tech AG", email = "info@natron.io"}]
+license = {text = "TBD"}
+requires-python = ">=3.10"
+keywords = ["prometheus", "exporter", "proxmox", "pmg", "proxmox mail gateway", "monitoring"]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "prometheus-client>=0.16.0",
+    "proxmoxer>=1.3.0",
+    "python-dotenv>=1.2.1",
+    "requests>=2.28.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/natrontech/pmg-exporter"
+
+[project.scripts]
+pmg-exporter = "pmg_exporter.cli:cli"
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/pmg_exporter/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pmg_exporter"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/**", "pyproject.toml", "README.md", "LICENSE"]
