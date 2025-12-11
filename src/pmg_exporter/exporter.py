@@ -87,14 +87,21 @@ class PMGExporter:
             if collector is None:
                 logging.warning(f"Collector '{name}' not found. Skipping registration.")
                 continue
-            assert self.proxmox is not None
             REGISTRY.register(collector(self.proxmox))
             logging.debug(f"Collector '{name}' registered successfully.")
 
     async def run(self) -> None:
         logging.info("Starting HTTP server for Prometheus metrics...")
         port = int(self.config.get("exporter_port", 10069))
-        addr = str(self.config.get("exporter_address", "0.0.0.0"))
+        default_addr = "127.0.0.1"
+        addr = str(self.config.get("exporter_address", default_addr))
+        if addr == "0.0.0.0":
+            logging.warning(
+                (
+                    "Configured to bind to all interfaces (0.0.0.0);"
+                    " consider restricting to a specific address for security."
+                )
+            )
         start_http_server(port=port, addr=addr)
         logging.info(f"HTTP server started on {addr}:{port}.")
         await asyncio.Event().wait()
