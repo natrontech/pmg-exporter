@@ -1,0 +1,287 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  release:
+    types:
+      - published
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-python:
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hashes.outputs.hashes }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Hatch
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatch
+
+      - name: Build wheel and sdist
+        run: hatch build
+
+      - name: Generate checksums and encode
+        id: hashes
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          sha256sum dist/* > dist/checksums.txt
+          echo "hashes=$(base64 -w0 dist/checksums.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/*
+
+  docker-build-and-push:
+    needs: build-python
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-digest: ${{ steps.build-and-push.outputs.digest }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Python dist (optional, if Dockerfile installs from wheel)
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Meta
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # semver tags
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            # latest on published releases
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+
+      - name: Derive version for build-arg
+        id: derive_version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
+            TAG="${{ github.event.release.tag_name }}"
+            VERSION="${TAG#v}"
+          else
+            VERSION="${GITHUB_SHA::7}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build and Push Docker Image
+        id: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.derive_version.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  sbom-image:
+    needs: [docker-build-and-push]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@fbfd9c6c189226748411491745178e0c2017392d # v0.20.10
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
+      - name: Generate SBOM and attach as attestation
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+          REPOSITORY: ${{ github.repository_owner }}
+        run: |
+          # Generate CycloneDX SBOM for the image
+          syft $IMAGE@$DIGEST -o cyclonedx-json=sbom.json
+
+          # Attach SBOM as a cosign attestation into ghcr.io/<owner>/sbom
+          COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/sbom cosign attest \
+            --yes \
+            --type cyclonedx \
+            --predicate sbom.json \
+            $IMAGE@$DIGEST
+
+
+  upload-release-assets:
+    needs: build-python
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+
+    steps:
+      - name: Download Python dist
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist
+
+      - name: Upload artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+            dist/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  binary-provenance:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-python]
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: "${{ needs.build-python.outputs.hashes }}"
+      upload-assets: true
+      draft-release: false
+
+  image-provenance:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [docker-build-and-push]
+    permissions:
+      actions: read
+      id-token: write
+      packages: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
+    with:
+      image: ghcr.io/${{ github.repository }}
+      digest: ${{ needs.docker-build-and-push.outputs.image-digest }}
+      registry-username: ${{ github.actor }}
+      provenance-registry-username: ${{ github.actor }}
+      provenance-repository: ghcr.io/${{ github.repository_owner }}/signatures
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
+      provenance-registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+  verification-with-cosign:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [docker-build-and-push, image-provenance, sbom-image]
+    runs-on: ubuntu-latest
+    permissions: read-all
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
+      - name: Sign image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+        run: |
+          cosign sign --yes $IMAGE@$DIGEST
+
+      - name: Verify provenance of image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+          REPOSITORY: ${{ github.repository_owner }}
+        run: |
+          COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/signatures cosign verify-attestation \
+            --type slsaprovenance \
+            --new-bundle-format=false \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
+            $IMAGE@$DIGEST
+
+      - name: Verify signature of image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+        run: |
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github.com/natrontech/pmg-exporter/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
+            $IMAGE@$DIGEST
+
+      - name: Verify SBOM attestation of image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+          REPOSITORY: ${{ github.repository_owner }}
+        run: |
+          COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/sbom cosign verify-attestation \
+            --type cyclonedx \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github.com/natrontech/pmg-exporter/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
+            --policy policy-sbom.cue \
+            $IMAGE@$DIGEST
