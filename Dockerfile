@@ -25,7 +25,7 @@ LABEL org.opencontainers.image.title="pmg-exporter" \
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir hatchling hatch-vcs \
     && pip install --no-cache-dir .
-    
+
 RUN useradd -u 1000 -r -s /usr/sbin/nologin pmg-exporter
 USER pmg-exporter
 

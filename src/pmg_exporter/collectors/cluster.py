@@ -15,38 +15,35 @@ class BaseClusterCollector(Collector):
         self.proxmox = proxmox
 
     def _get_cluster_status_entries(self) -> list[dict[str, str]]:
-        logging.debug("Fetching cluster status entries from ProxmoxAPI...")
+        logging.debug("Fetching cluster status entries from ProxmoxAPI")
         raw = (  # type: ignore[assignment]
-            self.proxmox.config.cluster.status.get()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-            or []
+            self.proxmox.config.cluster.status.get() or []  # type: ignore
         )
         return cast(list[dict[str, str]], raw)
 
     def _get_cluster_node_entries(self) -> list[dict[str, str]]:
-        logging.debug("Fetching cluster node entries from ProxmoxAPI...")
+        logging.debug("Fetching cluster node entries from ProxmoxAPI")
         entries = self._get_cluster_status_entries()
         return [e for e in entries if e.get("type") == "node"]
 
     def _get_cluster_domain_entries(self) -> list[dict[str, str]]:
-        logging.debug("Fetching cluster domain entries from ProxmoxAPI...")
+        logging.debug("Fetching cluster domain entries from ProxmoxAPI")
         raw = (  # type: ignore[assignment]
-            self.proxmox.config.domains.get()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-            or []
+            self.proxmox.config.domains.get() or []  # pyright: ignore
         )
         return cast(list[dict[str, str]], raw)
 
     def _get_cluster_backup_remote_entries(self) -> list[dict[str, str]]:
-        logging.debug("Fetching cluster backup remote entries from ProxmoxAPI...")
+        logging.debug("Fetching cluster backup remote entries from ProxmoxAPI")
         raw = (  # type: ignore[assignment]
-            self.proxmox.config.pbs.get()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-            or []
+            self.proxmox.config.pbs.get() or []  # pyright: ignore
         )
         return cast(list[dict[str, str]], raw)
 
 
 class ClusterStatusCollector(BaseClusterCollector):
     def collect(self):
-        logging.debug("Collecting cluster status metrics...")
+        logging.debug("Collecting cluster status metrics")
         status_metric = GaugeMetricFamily(
             "pmg_cluster_node_status",
             "Proxmox Mail Gateway cluster node status (1 if online)",
@@ -68,7 +65,7 @@ class ClusterStatusCollector(BaseClusterCollector):
 
 class ClusterNodesCollector(BaseClusterCollector):
     def collect(self):
-        logging.debug("Collecting cluster nodes metrics...")
+        logging.debug("Collecting cluster nodes metrics")
         nodes_total_metric = GaugeMetricFamily(
             "pmg_cluster_nodes_total",
             "Total number of nodes in the Proxmox Mail Gateway cluster",
@@ -98,7 +95,7 @@ class ClusterNodesCollector(BaseClusterCollector):
 
 class ClusterDomainsCollector(BaseClusterCollector):
     def collect(self):
-        logging.debug("Collecting cluster domains metrics...")
+        logging.debug("Collecting cluster domains metrics")
         domains_total_metric = GaugeMetricFamily(
             "pmg_cluster_domains_total",
             "Total number of domains in the Proxmox Mail Gateway cluster",
@@ -128,7 +125,7 @@ class ClusterDomainsCollector(BaseClusterCollector):
 
 class ClusterBackupCollector(BaseClusterCollector):
     def collect(self):
-        logging.debug("Collecting cluster backup metrics...")
+        logging.debug("Collecting cluster backup metrics")
         backups_remotes_total_metric = GaugeMetricFamily(
             "pmg_cluster_backups_remotes_total",
             "Total number of backup remotes in the Proxmox Mail Gateway cluster",

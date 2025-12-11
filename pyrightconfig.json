@@ -1,0 +1,18 @@
+{
+  "typeCheckingMode": "strict",
+  "disableFileWarnings": {
+    "*/site-packages/proxmoxer/*": [
+      "reportUnknownParameterType",
+      "reportUnknownArgumentType",
+      "reportUnknownVariableType",
+      "reportMissingTypeStubs",
+      "reportUnknownMemberType"
+    ]
+  },
+  "include": [
+    "src",
+    "tests"
+  ],
+  "venvPath": ".",
+  "venv": ".venv"
+}
