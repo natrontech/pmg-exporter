@@ -4,9 +4,10 @@ on:
   push:
     tags:
       - "v*"
-  release:
-    types:
-      - published
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -25,6 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'release' && format('refs/tags/{0}', github.event.release.tag_name) || github.ref }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -60,7 +62,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image-digest: ${{ steps.build-and-push.outputs.digest }}
+      digest: ${{ steps.build-and-push.outputs.digest }}
 
     steps:
       - name: Checkout
@@ -190,7 +192,6 @@ jobs:
         with:
           files: |
             dist/*
-            dist/checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -217,7 +218,7 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       image: ghcr.io/${{ github.repository }}
-      digest: ${{ needs.docker-build-and-push.outputs.image-digest }}
+      digest: ${{ needs.docker-build-and-push.outputs.digest }}
       registry-username: ${{ github.actor }}
       provenance-registry-username: ${{ github.actor }}
       provenance-repository: ghcr.io/${{ github.repository_owner }}/signatures
