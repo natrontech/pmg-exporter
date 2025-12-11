@@ -20,11 +20,11 @@ from pmg_exporter.collectors import (
     VersionInfoCollector,
 )
 
+from pmg_exporter.config import load_config
+
 import logging
 
 logging.getLogger("pmg_exporter")
-
-from pmg_exporter.config import load_config
 
 
 class PMGExporter:
@@ -55,7 +55,11 @@ class PMGExporter:
             k: (bool(v) if k == "verify_ssl" else str(v)) for k, v in raw.items()
         }
 
-        logging.debug(f"ProxmoxAPI initialization parameters: {[{k: arg} if k != "password" else {k: "***"} for k, arg in kwargs.items()]}")
+        sanitized_kwargs: list[str] = []
+        for k, arg in kwargs.items():
+            sanitized_kwargs.append(str({k: arg} if k != "password" else {k: "***"}))
+
+        logging.debug(f"ProxmoxAPI initialization parameters: {sanitized_kwargs}")
         self.proxmox = ProxmoxAPI(**kwargs)
         logging.info("ProxmoxAPI client initialized.")
 
@@ -89,11 +93,8 @@ class PMGExporter:
 
     async def run(self) -> None:
         logging.info("Starting HTTP server for Prometheus metrics...")
-        start_http_server(
-            port=int(self.config.get("exporter_port", 10069)),
-            addr=str(self.config.get("exporter_address", "0.0.0.0")),
-        )
-        logging.info(
-            f"HTTP server started. Exporter is running on port {self.config.get('exporter_port', 10069)}."
-        )
+        port = int(self.config.get("exporter_port", 10069))
+        addr = str(self.config.get("exporter_address", "0.0.0.0"))
+        start_http_server(port=port, addr=addr)
+        logging.info(f"HTTP server started on {addr}:{port}.")
         await asyncio.Event().wait()

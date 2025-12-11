@@ -10,7 +10,8 @@ def cli() -> None:
     parser = ArgumentParser(
         description=(
             "Proxmox Mail Gateway Exporter CLI"
-            " - Available collectors: all, cluster_status, subscription, node_status, cluster_nodes, cluster_domains, cluster_backups"
+            " - Available collectors: all, cluster_status, subscription, "
+            "node_status, cluster_nodes, cluster_domains, cluster_backups"
         )
     )
     exporterFlags = parser.add_argument_group("Exporter Flags")
@@ -18,7 +19,10 @@ def cli() -> None:
         "--config-file",
         type=pathlib.Path,
         default=pathlib.Path(os.getenv("PMG_EXPORTER_CONFIG_FILE", ".env")),
-        help="Path to the configuration file (default: .env or PMG_EXPORTER_CONFIG_FILE env variable)",
+        help=(
+            "Path to the configuration file"
+            "( default: .env or PMG_EXPORTER_CONFIG_FILE env variable)"
+        ),
     )
     exporterFlags.add_argument(
         "--collectors",
