@@ -93,15 +93,7 @@ class PMGExporter:
     async def run(self) -> None:
         logging.info("Starting HTTP server for Prometheus metrics...")
         port = int(self.config.get("exporter_port", 10069))
-        default_addr = "127.0.0.1"
-        addr = str(self.config.get("exporter_address", default_addr))
-        if addr == "0.0.0.0":
-            logging.warning(
-                (
-                    "Configured to bind to all interfaces (0.0.0.0);"
-                    " consider restricting to a specific address for security."
-                )
-            )
+        addr = str(self.config.get("exporter_address", "127.0.0.1"))
         start_http_server(port=port, addr=addr)
         logging.info(f"HTTP server started on {addr}:{port}.")
         await asyncio.Event().wait()
