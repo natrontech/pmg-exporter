@@ -42,3 +42,37 @@ packages = ["src/pmg_exporter"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/**", "pyproject.toml", "README.md", "LICENSE"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = "warning"
+reportUnknownMemberType = "warning"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | \.eggs
+  | build
+  | dist
+)/
+'''
+
+[tool.flake8]
+max-line-length = 88
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".tox",
+    ".eggs",
+    "src/pmg_exporter/_version.py",
+]

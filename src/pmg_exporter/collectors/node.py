@@ -3,7 +3,7 @@ from typing import Optional, Any, cast
 from prometheus_client.core import GaugeMetricFamily
 from prometheus_client.registry import Collector
 
-from proxmoxer import ProxmoxAPI  # pyright: ignore[reportMissingTypeStubs]
+from proxmoxer import ProxmoxAPI  # type: ignore
 
 import logging
 
@@ -67,7 +67,9 @@ class NodeStatusCollector(Collector):
             labels=["node"],
         )
 
-        status = cast(dict[str, Any], self.proxmox.nodes(node).status.get())  # type: ignore
+        status = cast(
+            dict[str, Any], self.proxmox.nodes(node).status.get()  # type: ignore
+        )
 
         node_insync_metric.add_metric(
             [node],
