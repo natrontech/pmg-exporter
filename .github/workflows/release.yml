@@ -160,13 +160,12 @@ jobs:
         env:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
-          REPOSITORY: ${{ github.repository_owner }}
         run: |
           # Generate CycloneDX SBOM for the image
           syft $IMAGE@$DIGEST -o cyclonedx-json=sbom.json
 
-          # Attach SBOM as a cosign attestation into ghcr.io/<owner>/sbom
-          COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/sbom cosign attest \
+          # Attach SBOM as a cosign attestation into a repo-scoped registry location
+          COSIGN_REPOSITORY=ghcr.io/${{ github.repository }}/sbom cosign attest \
             --yes \
             --type cyclonedx \
             --predicate sbom.json \
@@ -285,9 +284,8 @@ jobs:
         env:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
-          REPOSITORY: ${{ github.repository_owner }}
         run: |
-          COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/sbom cosign verify-attestation \
+          COSIGN_REPOSITORY=ghcr.io/${{ github.repository }}/sbom cosign verify-attestation \
             --type cyclonedx \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/natrontech/pmg-exporter/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
