@@ -159,7 +159,7 @@ jobs:
       - name: Generate SBOM and attach as attestation
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
           REPOSITORY: ${{ github.repository_owner }}
         run: |
           # Generate CycloneDX SBOM for the image
@@ -215,13 +215,14 @@ jobs:
       actions: read
       id-token: write
       packages: write
+      contents: read
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       image: ghcr.io/${{ github.repository }}
       digest: ${{ needs.docker-build-and-push.outputs.digest }}
       registry-username: ${{ github.actor }}
       provenance-registry-username: ${{ github.actor }}
-      provenance-repository: ghcr.io/${{ github.repository_owner }}/signatures
+      provenance-repository: ghcr.io/${{ github.repository }}/signatures
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
       provenance-registry-password: ${{ secrets.GITHUB_TOKEN }}
@@ -254,17 +255,16 @@ jobs:
       - name: Sign image
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
           cosign sign --yes $IMAGE@$DIGEST
 
       - name: Verify provenance of image
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
-          REPOSITORY: ${{ github.repository_owner }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
-          COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/signatures cosign verify-attestation \
+          COSIGN_REPOSITORY=ghcr.io/${{ github.repository }}/signatures cosign verify-attestation \
             --type slsaprovenance \
             --new-bundle-format=false \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
@@ -274,7 +274,7 @@ jobs:
       - name: Verify signature of image
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
           cosign verify \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
@@ -284,7 +284,7 @@ jobs:
       - name: Verify SBOM attestation of image
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          DIGEST: ${{ needs.docker-build-and-push.outputs.image-digest }}
+          DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
           REPOSITORY: ${{ github.repository_owner }}
         run: |
           COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/sbom cosign verify-attestation \
