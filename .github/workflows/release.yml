@@ -71,7 +71,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download Python dist (optional, if Dockerfile installs from wheel)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-dist
           path: dist
@@ -181,7 +181,7 @@ jobs:
 
     steps:
       - name: Download Python dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-dist
           path: dist
