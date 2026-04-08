@@ -15,5 +15,6 @@ def load_config(config_file: str) -> dict[str, str | bool]:
     config["backend"] = os.getenv("PMG_BACKEND", "https")
     config["service"] = os.getenv("PMG_SERVICE", "pmg")
     config["exporter_port"] = os.getenv("PMG_EXPORTER_PORT", "10069")
+    config["exporter_address"] = os.getenv("PMG_EXPORTER_ADDRESS", "127.0.0.1")
     config["log_level"] = os.getenv("PMG_LOG_LEVEL", "INFO")
     return config
