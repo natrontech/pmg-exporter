@@ -46,7 +46,7 @@ class PMGExporter:
 
     def initialize_proxmox_client(self) -> None:
         logging.info("Initializing ProxmoxAPI client...")
-        excluded_keys = {"exporter_port", "log_level"}
+        excluded_keys = {"exporter_port", "exporter_address", "log_level"}
         raw = dict(self.config)
         for k in excluded_keys:
             raw.pop(k, None)
