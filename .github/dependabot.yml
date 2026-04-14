@@ -4,20 +4,44 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Zurich"
     commit-message:
-      prefix: ":seedling: [deps-github-actions]"
+      prefix: ":seedling:"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 10
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      python-deps:
-        patterns: ["*"]
+      day: "tuesday"
+      time: "06:00"
+      timezone: "Europe/Zurich"
     commit-message:
-      prefix: ":robot: [deps-python]"
+      prefix: ":robot:"
+    labels:
+      - "dependencies"
+      - "python"
+    open-pull-requests-limit: 10
+
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "wednesday"
+      time: "06:00"
+      timezone: "Europe/Zurich"
     commit-message:
-      prefix: ":whale: [deps-docker]"
+      prefix: ":robot:"
+    labels:
+      - "dependencies"
+      - "docker"
+    open-pull-requests-limit: 5

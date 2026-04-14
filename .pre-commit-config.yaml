@@ -12,13 +12,13 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.0
+    rev: v8.30.1
     hooks:
       - id: gitleaks
 
   # Python formatter: black
   - repo: https://github.com/psf/black
-    rev: 25.12.0
+    rev: 26.3.1
     hooks:
       - id: black
         language_version: python3
@@ -34,6 +34,6 @@ repos:
 
   # Static typing: pyright (strict)
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.407
+    rev: v1.1.408
     hooks:
     - id: pyright
