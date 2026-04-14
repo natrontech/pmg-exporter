@@ -139,36 +139,37 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
 
       - name: Generate SBOM and attach as attestation
         env:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
+          set -euo pipefail
           # Generate CycloneDX SBOM for the image
           syft $IMAGE@$DIGEST -o cyclonedx-json=sbom.json
 
-          # Attach SBOM as a cosign attestation into a repo-scoped registry location
-          COSIGN_REPOSITORY=ghcr.io/${{ github.repository }}/sbom cosign attest \
-            --yes \
-            --type cyclonedx \
+          # Attach SBOM as a cosign attestation
+          cosign attest --yes --new-bundle-format \
             --predicate sbom.json \
+            --type cyclonedx \
+            --oidc-provider github-actions \
             $IMAGE@$DIGEST
 
 
@@ -220,11 +221,8 @@ jobs:
       image: ghcr.io/${{ github.repository }}
       digest: ${{ needs.docker-build-and-push.outputs.digest }}
       registry-username: ${{ github.actor }}
-      provenance-registry-username: ${{ github.actor }}
-      provenance-repository: ghcr.io/${{ github.repository }}/signatures
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
-      provenance-registry-password: ${{ secrets.GITHUB_TOKEN }}
 
   verification-with-cosign:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -237,37 +235,44 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
 
       - name: Sign image
         env:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
-          cosign sign --yes $IMAGE@$DIGEST
+          set -euo pipefail
+          cosign sign --yes --new-bundle-format \
+            -a "repo=${{ github.repository }}" \
+            -a "workflow=${{ github.workflow }}" \
+            -a "ref=${{ github.sha }}" \
+            $IMAGE@$DIGEST
 
       - name: Verify provenance of image
         env:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
-          COSIGN_REPOSITORY=ghcr.io/${{ github.repository }}/signatures cosign verify-attestation \
+          set -euo pipefail
+          cosign verify-attestation \
             --type slsaprovenance \
             --new-bundle-format=false \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
+            --policy policy.cue \
             $IMAGE@$DIGEST
 
       - name: Verify signature of image
@@ -275,7 +280,8 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
-          cosign verify \
+          set -euo pipefail
+          cosign verify --new-bundle-format \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/natrontech/pmg-exporter/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
             $IMAGE@$DIGEST
@@ -285,7 +291,8 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository }}
           DIGEST: ${{ needs.docker-build-and-push.outputs.digest }}
         run: |
-          COSIGN_REPOSITORY=ghcr.io/${{ github.repository }}/sbom cosign verify-attestation \
+          set -euo pipefail
+          cosign verify-attestation --new-bundle-format \
             --type cyclonedx \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/natrontech/pmg-exporter/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
