@@ -13,6 +13,8 @@ keywords = ["prometheus", "exporter", "proxmox", "pmg", "proxmox mail gateway", 
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -20,7 +22,7 @@ classifiers = [
     "Topic :: System :: Monitoring",
 ]
 dependencies = [
-    "prometheus-client==0.24.1",
+    "prometheus-client==0.25.0",
     "proxmoxer==2.3.0",
     "python-dotenv==1.2.2",
     "requests==2.33.1",

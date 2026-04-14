@@ -1,7 +1,7 @@
 // The predicateType field must match this string
-PredicateType: "https://cyclonedx.org/bom"
+predicateType: "https://cyclonedx.org/bom"
 
-Predicate: {
+predicate: {
   metadata: {
     component: {
       // Enforce the SBOM root component to be the container image digest
