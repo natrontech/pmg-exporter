@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: System :: Monitoring",
 ]
 dependencies = [
-    "prometheus-client==0.25.0",
+    "prometheus-client==0.26.0",
     "proxmoxer==2.3.0",
     "python-dotenv==1.2.2",
     "requests==2.34.2",
