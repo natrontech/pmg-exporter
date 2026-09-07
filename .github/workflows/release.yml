@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hashes.outputs.hashes }}
+    permissions:
+      contents: read
+      id-token: write # sign checksums with cosign
 
     steps:
       - name: Checkout
@@ -45,9 +48,19 @@ jobs:
         id: hashes
         run: |
           set -euo pipefail
-          mkdir -p dist
-          sha256sum dist/* > dist/checksums.txt
-          echo "hashes=$(base64 -w0 dist/checksums.txt)" >> "$GITHUB_OUTPUT"
+          # bare filenames so subject names match the flat release assets
+          # that release-verification.yml downloads and verifies
+          cd dist
+          sha256sum * > checksums.txt
+          echo "hashes=$(base64 -w0 checksums.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign checksums with cosign (keyless)
+        run: |
+          set -euo pipefail
+          cosign sign-blob --bundle=dist/checksums.txt.sigstore.json dist/checksums.txt --yes
 
       - name: Upload dist artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -188,6 +201,9 @@ jobs:
       - name: Upload artifacts to GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
+          # draft until all assets (incl. provenance) are attached; publishing
+          # the release triggers release-verification.yml
+          draft: true
           files: |
             dist/*
         env:
@@ -195,7 +211,7 @@ jobs:
 
   binary-provenance:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build-python]
+    needs: [build-python, upload-release-assets]
     permissions:
       actions: read
       id-token: write
@@ -203,8 +219,8 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: "${{ needs.build-python.outputs.hashes }}"
-      upload-assets: true
-      draft-release: false
+      upload-assets: true # upload to the draft release
+      draft-release: true
 
   image-provenance:
     if: startsWith(github.ref, 'refs/tags/v')
